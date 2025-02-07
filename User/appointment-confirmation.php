@@ -1,7 +1,6 @@
 
 
 <?php
-
 session_start();
 include('db.php');  // Include the database connection
 
@@ -28,17 +27,50 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $appointment_date = $_POST['date'];
     $reason = $_POST['reason'];
 
-    // Prepare the SQL query to insert data
-    $sql = "INSERT INTO appointments (name, email, phone, appointment_date, reason, gender) 
-            VALUES ('$name', '$email', '$phone', '$appointment_date', '$reason', '$gender')";
+    // Check if the exact combination of details already exists in the database
+    $sql_check = "SELECT * FROM appointments WHERE name = ? AND email = ? AND phone = ? AND appointment_date = ? AND reason = ? AND gender = ?";
+    $stmt = $conn->prepare($sql_check);
+    $stmt->bind_param("ssssss", $name, $email, $phone, $appointment_date, $reason, $gender);
+    $stmt->execute();
+    $result = $stmt->get_result();
 
-    if ($conn->query($sql) === TRUE) {
-        echo "Appointment request submitted successfully!";
+    if ($result->num_rows > 0) {
+        // Appointment already exists
+        echo "<p style='
+            background-color: red;
+            color: white;
+            padding:20px;
+            margin-left: 450px;
+            font-weight: 200;
+            display: inline-block;
+            border-radius:15px;
+        '>Your appointment with the exact same details already exists. Please check your details and try again.</p>";
     } else {
-        echo "Error: " . $sql . "<br>" . $conn->error;
+        // No match found, insert the new appointment into the database
+        $sql_insert = "INSERT INTO appointments (name, email, phone, appointment_date, reason, gender, status) 
+                       VALUES (?, ?, ?, ?, ?, ?, 'Pending')";
+        $stmt = $conn->prepare($sql_insert);
+        $stmt->bind_param("ssssss", $name, $email, $phone, $appointment_date, $reason, $gender);
+
+        if ($stmt->execute()) {
+            echo "<p style=' background-color: green;
+            color: white;
+            padding:20px;
+            margin-left: 550px;
+            font-weight: 200;
+            display: inline-block;
+            border-radius:15px;'>Appointment request submitted successfully!</p>";
+        } else {
+            echo "<p>Error: " . $stmt->error . "</p>";
+        }
     }
+
+    $stmt->close();
 }
 
+// Fetch and display existing appointments
+$sql_select = "SELECT id, name, email, phone, appointment_date, reason, gender, status FROM appointments";
+$result = $conn->query($sql_select);
 ?>
 
 <!DOCTYPE html>
@@ -53,7 +85,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <header>
         <h1>Appointment Confirmation</h1>
         <nav>
-         <a href="index.html">Home</a>
+            <a href="index.html">Home</a>
+            <a href="appointment.html">Make appointment</a>
         </nav>
     </header>
     
@@ -66,14 +99,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <section>
         <h2>Existing Appointments:</h2>
         <?php
-        // Fetch data from the appointments table
-        $sql_select = "SELECT id, name, email, phone, appointment_date, reason, gender FROM appointments";
-        $result = $conn->query($sql_select);
-
         if ($result->num_rows > 0) {
-            echo "<table border='1'><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Appointment Date</th><th>Reason</th><th>Gender</th></tr>";
+            echo "<table border='1'><tr><th>ID</th><th>Name</th><th>Email</th><th>Phone</th><th>Appointment Date</th><th>Reason</th><th>Gender</th><th>Status</th></tr>";
             // Output data of each row
-            while($row = $result->fetch_assoc()) {
+            while ($row = $result->fetch_assoc()) {
                 echo "<tr>
                         <td>" . $row["id"] . "</td>
                         <td>" . $row["name"] . "</td>
@@ -82,6 +111,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <td>" . $row["appointment_date"] . "</td>
                         <td>" . $row["reason"] . "</td>
                         <td>" . $row["gender"] . "</td>
+                        <td>" . $row["status"] . "</td>
                       </tr>";
             }
             echo "</table>";
@@ -95,3 +125,4 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     </section>
 </body>
 </html>
+
