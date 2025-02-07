@@ -52,6 +52,8 @@ form {
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
 }
+
+
 .country-code {
     background-color: #f4f4f4;
     border: 1px solid #ddd;
@@ -313,6 +315,7 @@ table tr:hover {
 .clearfix {
     clear: both;
 }
+
 footer {
     background-color: #333;
     color: white;
@@ -321,4 +324,21 @@ footer {
     position: fixed;
     width: 100%;
     bottom: 0;
+    
+}
+
+.va{
+    
+   
+   
+    box-shadow: 0px;
+    display:inline;
+    
+    max-width: 600px;
+    margin: 0 auto;
+    background-color: #e50d0d;
+    padding: 0px;
+    border:none;
+    box-shadow: 0px;
+    
 }
